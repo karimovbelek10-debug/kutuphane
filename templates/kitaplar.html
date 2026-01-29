@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitaplar</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<h1>📚 Kitaplar</h1>
+
+<form action="/yukle" method="post" enctype="multipart/form-data">
+  <input type="file" name="pdf" accept="application/pdf" required>
+  <button type="submit">📤 PDF Yükle</button>
+</form>
+
+<h3>Yüklenen kitaplar</h3>
+<ul>
+  {% for f in pdfler %}
+    <li><a href="/dosya/{{ f }}" target="_blank">{{ f }}</a></li>
+  {% else %}
+    <li>Henüz kitap yok.</li>
+  {% endfor %}
+</ul>
+
+<p><a href="/anasayfa">⬅️ Ana sayfa</a> | <a href="/cikis">🚪 Çıkış</a></p>
+
+</body>
+</html>
