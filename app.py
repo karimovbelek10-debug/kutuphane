@@ -3,17 +3,16 @@ from flask import Flask, render_template, request, redirect, session, send_from_
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = "gizli_anahtar_123"
+app.secret_key = os.environ.get("SECRET_KEY", "gizli_anahtar_123")
 
-KULLANICI = "admin"
-SIFRE = "1234"
+KULLANICI = os.environ.get("ADMIN_USER", "admin")
+SIFRE = os.environ.get("ADMIN_PASS", "1234")
 
 UPLOAD_FOLDER = "uploads"
-ALLOWED_EXTENSIONS = {"pdf"}
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-def allowed_file(filename: str) -> bool:
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in {"pdf"}
 
 @app.route("/", methods=["GET", "POST"])
 def login():
@@ -38,9 +37,7 @@ def anasayfa():
 def kitaplar():
     if not session.get("giris"):
         return redirect("/")
-
-    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-    files = sorted(os.listdir(app.config["UPLOAD_FOLDER"]))
+    files = os.listdir(UPLOAD_FOLDER)
     pdfler = [f for f in files if f.lower().endswith(".pdf")]
     return render_template("kitaplar.html", pdfler=pdfler)
 
@@ -48,26 +45,21 @@ def kitaplar():
 def yukle():
     if not session.get("giris"):
         return redirect("/")
-
     if "pdf" not in request.files:
-        return redirect(url_for("kitaplar"))
-
+        return redirect("/kitaplar")
     file = request.files["pdf"]
-    if file.filename == "":
-        return redirect(url_for("kitaplar"))
-
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(save_path)
-
-    return redirect(url_for("kitaplar"))
+    return redirect("/kitaplar")
 
 @app.route("/dosya/<path:filename>")
 def dosya(filename):
     if not session.get("giris"):
         return redirect("/")
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename, as_attachment=False)
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=False)
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
